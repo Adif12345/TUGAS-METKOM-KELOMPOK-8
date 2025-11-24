@@ -1,14 +1,15 @@
 """
-Koordinat Point Generator — PRO / GIS MINI
+Koordinat Point Generator — PRO / GIS MINI (Dynamic Azimuth Option)
 Versi untuk VSCode (single-file app)
 
 Fitur utama:
-- GUI sederhana dengan mode generate: square & random uniform
-- Input: start coord, spacing, jumlah titik
+- GUI dengan mode generate: square, random uniform, dan line by azimuth
+- Input azimuth hanya muncul jika mode azimuth dipilih
 - Visualisasi scatter plot
 - Export: TXT, CSV, XLSX
 """
 
+import math
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import numpy as np
@@ -39,18 +40,23 @@ def generate_random_uniform(xmin, xmax, ymin, ymax, n_points):
     ys = np.random.uniform(ymin, ymax, n_points)
     return list(zip(xs, ys))
 
+def generate_line_azimuth(x0, y0, spacing, n_points, azimuth_deg):
+    az = math.radians(azimuth_deg)
+    pts = [(x0 + i * spacing * math.sin(az), y0 + i * spacing * math.cos(az)) for i in range(n_points)]
+    return pts
+
 # -------------------------
 # Main GUI Application
 # -------------------------
 class PROGISApp:
     def __init__(self, master):
         if USE_BOOTSTRAP:
-            self.root = tb.Window(themename=THEME, title="Koordinat Point Generator - PRO GIS")
+            self.root = tb.Window(themename=THEME, title="Koordinat Point Generator - PRO GIS (Dynamic Azimuth)")
             self.master = self.root
         else:
             self.root = master
             self.master = master
-            master.title("Koordinat Point Generator - PRO GIS")
+            master.title("Koordinat Point Generator - PRO GIS (Dynamic Azimuth)")
             master.geometry("1000x700")
 
         self.points = []
@@ -73,7 +79,9 @@ class PROGISApp:
 
         ttk.Label(lf, text="Mode:").grid(row=0, column=0, sticky="w")
         self.mode_var = tk.StringVar(value="square")
-        ttk.Combobox(lf, textvariable=self.mode_var, values=["square", "random_uniform"], width=18).grid(row=0, column=1, padx=4, pady=2)
+        mode_box = ttk.Combobox(lf, textvariable=self.mode_var, values=["square", "random_uniform", "line_azimuth"], width=18)
+        mode_box.grid(row=0, column=1, padx=4, pady=2)
+        mode_box.bind("<<ComboboxSelected>>", self.toggle_azimuth_option)
 
         ttk.Label(lf, text="Start X:").grid(row=1, column=0, sticky="w")
         self.start_x = tk.DoubleVar(value=500000.0)
@@ -91,8 +99,13 @@ class PROGISApp:
         self.count_side = tk.IntVar(value=10)
         ttk.Entry(lf, textvariable=self.count_side, width=12).grid(row=4, column=1)
 
-        ttk.Button(lf, text="Generate", command=self.on_generate).grid(row=5, column=0, pady=6)
-        ttk.Button(lf, text="Clear", command=self.on_clear).grid(row=5, column=1, pady=6)
+        # azimuth field (hidden by default)
+        self.azimuth_label = ttk.Label(lf, text="Azimuth (°):")
+        self.azimuth_entry_var = tk.DoubleVar(value=45.0)
+        self.azimuth_entry = ttk.Entry(lf, textvariable=self.azimuth_entry_var, width=12)
+
+        ttk.Button(lf, text="Generate", command=self.on_generate).grid(row=6, column=0, pady=6)
+        ttk.Button(lf, text="Clear", command=self.on_clear).grid(row=6, column=1, pady=6)
 
         right_frame = ttk.Frame(self.tab_generate)
         right_frame.pack(side="left", fill="both", expand=True, padx=8, pady=8)
@@ -119,11 +132,19 @@ class PROGISApp:
         sf = ttk.LabelFrame(self.tab_about, text="About", padding=8)
         sf.pack(fill="both", expand=True, padx=8, pady=8)
         txt = ScrolledText(sf, height=15)
-        txt.insert("1.0", "Koordinat Point Generator - PRO GIS MINI\n\nAplikasi sederhana untuk menghasilkan titik koordinat otomatis.\n\nFitur:\n- Generate titik persegi dan acak\n- Visualisasi scatter plot\n- Export hasil ke TXT, CSV, XLSX\n")
+        txt.insert("1.0", "Koordinat Point Generator - PRO GIS MINI (Dynamic Azimuth)\n\nAplikasi sederhana untuk menghasilkan titik koordinat otomatis.\n\nFitur:\n- Generate titik persegi, acak, dan garis berdasarkan azimuth\n- Input azimuth hanya muncul jika mode azimuth dipilih\n- Visualisasi scatter plot\n- Export hasil ke TXT, CSV, XLSX\n")
         txt.configure(state="disabled")
         txt.pack(fill="both", expand=True)
 
-    # GENERATE HANDLERS
+    def toggle_azimuth_option(self, event=None):
+        mode = self.mode_var.get()
+        if mode == "line_azimuth":
+            self.azimuth_label.grid(row=5, column=0, sticky="w")
+            self.azimuth_entry.grid(row=5, column=1)
+        else:
+            self.azimuth_label.grid_remove()
+            self.azimuth_entry.grid_remove()
+
     def on_generate(self):
         mode = self.mode_var.get()
         x0 = self.start_x.get()
@@ -135,6 +156,9 @@ class PROGISApp:
             pts = generate_square_grid(cnt, spacing, x0, y0)
         elif mode == "random_uniform":
             pts = generate_random_uniform(x0, x0 + spacing * cnt, y0, y0 + spacing * cnt, int(cnt))
+        elif mode == "line_azimuth":
+            azimuth = self.azimuth_entry_var.get()
+            pts = generate_line_azimuth(x0, y0, spacing, cnt, azimuth)
         else:
             pts = []
 
@@ -162,7 +186,6 @@ class PROGISApp:
         self.ax.grid(True)
         self.canvas_plot.draw()
 
-    # EXPORT HANDLERS
     def export_txt(self):
         if not self.points:
             messagebox.showwarning("No Data", "No points to export.")
