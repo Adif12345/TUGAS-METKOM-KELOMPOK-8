@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+    <name>Contoh Polygon Area</name>
+    <Placemark>
+        <name>Polygon Test</name>
+        <MultiGeometry>
+            <LineString>
+                <coordinates>
+                    110.4200,-7.7800,0
+                    110.4250,-7.7800,0
+                    110.4250,-7.7750,0
+                    110.4200,-7.7750,0
+                    110.4200,-7.7800,0
+                </coordinates>
+            </LineString>
+        </MultiGeometry>
+    </Placemark>
+</Document>
+</kml>
