@@ -1,9 +1,9 @@
 """
-Koordinat Point Generator — PRO / GIS MINI (Dynamic Azimuth Option)
+Koordinat Point Generator — PRO / GIS MINI (Square & Azimuth Only)
 Versi untuk VSCode (single-file app)
 
 Fitur utama:
-- GUI dengan mode generate: square, random uniform, dan line by azimuth
+- GUI dengan mode generate: square dan line by azimuth
 - Input azimuth hanya muncul jika mode azimuth dipilih
 - Visualisasi scatter plot
 - Export: TXT, CSV, XLSX
@@ -35,11 +35,6 @@ def generate_square_grid(n_side, spacing, x0, y0):
     pts = [(x0 + x, y0 + y) for x in xs for y in ys]
     return pts
 
-def generate_random_uniform(xmin, xmax, ymin, ymax, n_points):
-    xs = np.random.uniform(xmin, xmax, n_points)
-    ys = np.random.uniform(ymin, ymax, n_points)
-    return list(zip(xs, ys))
-
 def generate_line_azimuth(x0, y0, spacing, n_points, azimuth_deg):
     az = math.radians(azimuth_deg)
     pts = [(x0 + i * spacing * math.sin(az), y0 + i * spacing * math.cos(az)) for i in range(n_points)]
@@ -51,12 +46,12 @@ def generate_line_azimuth(x0, y0, spacing, n_points, azimuth_deg):
 class PROGISApp:
     def __init__(self, master):
         if USE_BOOTSTRAP:
-            self.root = tb.Window(themename=THEME, title="Koordinat Point Generator - PRO GIS (Dynamic Azimuth)")
+            self.root = tb.Window(themename=THEME, title="Koordinat Point Generator - PRO GIS (Square & Azimuth)")
             self.master = self.root
         else:
             self.root = master
             self.master = master
-            master.title("Koordinat Point Generator - PRO GIS (Dynamic Azimuth)")
+            master.title("Koordinat Point Generator - PRO GIS (Square & Azimuth)")
             master.geometry("1000x700")
 
         self.points = []
@@ -79,7 +74,7 @@ class PROGISApp:
 
         ttk.Label(lf, text="Mode:").grid(row=0, column=0, sticky="w")
         self.mode_var = tk.StringVar(value="square")
-        mode_box = ttk.Combobox(lf, textvariable=self.mode_var, values=["square", "random_uniform", "line_azimuth"], width=18)
+        mode_box = ttk.Combobox(lf, textvariable=self.mode_var, values=["square", "line_azimuth"], width=18)
         mode_box.grid(row=0, column=1, padx=4, pady=2)
         mode_box.bind("<<ComboboxSelected>>", self.toggle_azimuth_option)
 
@@ -132,7 +127,7 @@ class PROGISApp:
         sf = ttk.LabelFrame(self.tab_about, text="About", padding=8)
         sf.pack(fill="both", expand=True, padx=8, pady=8)
         txt = ScrolledText(sf, height=15)
-        txt.insert("1.0", "Koordinat Point Generator - PRO GIS MINI (Dynamic Azimuth)\n\nAplikasi sederhana untuk menghasilkan titik koordinat otomatis.\n\nFitur:\n- Generate titik persegi, acak, dan garis berdasarkan azimuth\n- Input azimuth hanya muncul jika mode azimuth dipilih\n- Visualisasi scatter plot\n- Export hasil ke TXT, CSV, XLSX\n")
+        txt.insert("1.0", "Koordinat Point Generator - PRO GIS MINI (Square & Azimuth)\n\nAplikasi sederhana untuk menghasilkan titik koordinat otomatis.\n\nFitur:\n- Generate titik persegi dan garis berdasarkan azimuth\n- Input azimuth hanya muncul jika mode azimuth dipilih\n- Visualisasi scatter plot\n- Export hasil ke TXT, CSV, XLSX\n")
         txt.configure(state="disabled")
         txt.pack(fill="both", expand=True)
 
@@ -154,8 +149,6 @@ class PROGISApp:
 
         if mode == "square":
             pts = generate_square_grid(cnt, spacing, x0, y0)
-        elif mode == "random_uniform":
-            pts = generate_random_uniform(x0, x0 + spacing * cnt, y0, y0 + spacing * cnt, int(cnt))
         elif mode == "line_azimuth":
             azimuth = self.azimuth_entry_var.get()
             pts = generate_line_azimuth(x0, y0, spacing, cnt, azimuth)
